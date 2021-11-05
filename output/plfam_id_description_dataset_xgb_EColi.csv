@@ -1,0 +1,29 @@
+ID,plfam_id,pgfam_id,feature_type,figfam_id,gene,product
+1,PLF_561_00049890,PGF_00784680,CDS,,,Class C beta-lactamase (EC 3.5.2.6) => CMY/CMY-2/CFE/LAT family
+2,PLF_561_00004782,PGF_01031760,CDS,,,Class A beta-lactamase (EC 3.5.2.6) => TEM family
+3,PLF_561_00007970,PGF_00022115,CDS,,,Mobile element protein
+4,PLF_561_00005659,PGF_00014968,CDS,,,Integron integrase IntI1
+5,PLF_561_00006091,PGF_03416711,CDS,,TetR,Tetracycline resistance regulatory protein TetR
+6,PLF_561_00013716,PGF_01954837,CDS,,,"Class A beta-lactamase (EC 3.5.2.6) => CTX-M family, extended-spectrum"
+7,PLF_561_00019473,PGF_09348764,CDS,,,Dihydrofolate reductase (EC 1.5.1.3)
+8,PLF_561_00009406,PGF_05132048,CDS,,,"Aminoglycoside N(3)-acetyltransferase (EC 2.3.1.81) => AAC(3)-II,III,IV,VI,VIII,IX,X"
+9,PLF_561_00015082,PGF_01000105,CDS,,,Mobile element protein
+10,PLF_561_00003350,PGF_00209844,CDS,,,hypothetical protein
+11,PLF_561_00009585,PGF_05125858,CDS,,,"Type IV secretory pathway, VirD2 components (relaxase)"
+12,PLF_561_00005191,PGF_00423408,CDS,,,Dihydropteroate synthase type-2 (EC 2.5.1.15) @ Sulfonamide resistance protein
+13,PLF_561_00008661,PGF_00062021,CDS,,,Tryptophan synthase (indole-salvaging) (EC 4.2.1.122)
+14,PLF_561_00019538,PGF_03416711,CDS,,TetR,Tetracycline resistance regulatory protein TetR
+15,PLF_561_00008369,PGF_08224944,CDS,,,Chloramphenicol O-acetyltransferase (EC 2.3.1.28) => CatA1/CatA4 family
+16,PLF_561_00000117,PGF_01000105,CDS,,,Mobile element protein
+17,PLF_561_00071721,PGF_01954837,CDS,,,"Class A beta-lactamase (EC 3.5.2.6) => CTX-M family, extended-spectrum"
+18,PLF_561_00006969,PGF_02980751,CDS,,Tet(B),"Tetracycline resistance, MFS efflux pump => Tet(B)"
+19,PLF_561_00005448,PGF_06393555,CDS,,,Aminoglycoside 3''-phosphotransferase (EC 2.7.1.87) => APH(3'')-I
+20,PLF_561_00028701,PGF_00006137,CDS,,,Formate dehydrogenase O alpha subunit (EC 1.2.1.2) @ selenocysteine-containing
+21,PLF_561_00017967,PGF_05910234,CDS,,OmpD,Outer membrane porin OmpD
+22,PLF_561_00028114,PGF_08225224,CDS,,,hypothetical protein
+23,PLF_561_00005992,PGF_06043088,CDS,,,Aminoglycoside 3''-nucleotidyltransferase (EC 2.7.7.-) => ANT(3'')-Ia (AadA family)
+24,PLF_561_00011189,PGF_00189747,CDS,,,Class D beta-lactamase (EC 3.5.2.6) => OXA-1 family
+25,PLF_561_00175318,PGF_12821681,CDS,,,Aminoglycoside N(6')-acetyltransferase (EC 2.3.1.82) => AAC(6')-Ib-cr fluoroquinolone-acetylating
+26,PLF_561_00028965,PGF_03145724,CDS,,InSA,IS1 protein InsA
+27,PLF_561_00003914,PGF_00188795,CDS,,,hypothetical protein
+29,PLF_561_00009167,PGF_03058852,CDS,,,hypothetical protein
