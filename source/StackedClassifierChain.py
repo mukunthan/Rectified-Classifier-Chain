@@ -1,29 +1,27 @@
 #Author : Mukunthan Tharmakulasingam (mukunthan1989@gmail.com)
 
+import collections
 from sklearn.base import clone
 import numpy as np
 import pandas as pd
 from Utilils import *
-import shap
 
 delta=0.000000000000000000001
 
-class RectifiedClassiferChain:
-    def __init__(self,basemodel,type=0, optimized=False, optimizedmethod='CrossEntropy'):
+class StackedClassifierChain:
+    def __init__(self,basemodel):
         '''
         :param basemodel: Basemodel to be used in ClassiferChain
         '''
         self.ClassifierList = []
         self.model=basemodel
-        self.updatedlabelorder=[]
         self.originallabelorder = []
-        self.optimized=optimized
-        self.optimizedmethod=optimizedmethod
         self.X=None
         self.Y=None
-        self.type = type
+        self.LabelHashDic={}
+        self.LabelCount={}
 
-    def trainRCC(self,X,Y):
+    def trainSCC(self,X,Y):
         '''
         :param X: Pandas Data Frame Features
         :param Y: Pandas Data Frame Labels
@@ -35,63 +33,36 @@ class RectifiedClassiferChain:
         for categories in Categories:
             self.ClassifierList.append(clone(self.model))
             self.originallabelorder.append(categories)
-
-        if(self.optimized==True):
-            Y=self.OptimizeLabelOrder(Y)
-            Categories = list(Y.columns.values)
-        else:
-            self.updatedlabelorder=self.originallabelorder
-        k = 0
+        
+        k=0
         for category in list(Categories):   ###Updated if needed
             #print("Category: " + category)
             modelc = self.ClassifierList[k]
             Xtrain = X
-            Ytrain = Y
-            Ytrain = Ytrain.dropna(subset=[category])  # , inplace=True)
-            droppedindex = Y[~Y.index.isin(Ytrain.index)].index.values
-            Xtrain = Xtrain.drop(droppedindex, axis=0)
-            Ytrain = Ytrain[category]
-            Ytrain = Ytrain.astype(int)
+            Ytrain =Y[category].fillna(0) # , inplace=True)
+           
             modelc.fit(Xtrain, Ytrain.values.ravel())
-            if (len(droppedindex) > 0):
-                prediction = modelc.predict(X.iloc[droppedindex])
-                i = 0
-                for value in prediction:
-                    Y.iloc[droppedindex[i]][category] = value
-                    i = i + 1
-            X = X.join(Y[category])
-            k = k + 1
+            Ypred=modelc.predict(Xtrain)
+            YPredict = pd.DataFrame(Ypred, columns=[self.originallabelorder[k]])
+            X = X.join(YPredict)
+        
+            k=k+1
+    
         return self.ClassifierList
 
-    def predictRCC(self, X):
+    def predictSCC(self, X):
         '''
         :param X:
         :return:
         '''
         i = 0
         Y = pd.DataFrame(index=X.index)
-        global TotalSumvalue
-        TotalSumvalue = [[0 for x in range(X.shape[0])] for y in range(X.shape[1])]
         for classifer in self.ClassifierList:
-            if (self.type==3):
-                KErnalExplnanier = shap.TreeExplainer(classifer)
-                class_shap_values = KErnalExplnanier.shap_values(X)
-                if (i == 0):
-                    TotalSumvalue = np.absolute(class_shap_values)
-                else:
-                    TotalSumvalue = TotalSumvalue + np.absolute(class_shap_values[:, :-i])
-
             prediction = classifer.predict(X)
-            YPredict = pd.DataFrame(prediction, columns=[self.updatedlabelorder[i]])
+            YPredict = pd.DataFrame(prediction, columns=[self.originallabelorder[i]])
             X = X.join(YPredict)
             Y = Y.join(YPredict)
             i = i + 1
-
-        if (self.optimized == True):
-            Y_rearranged = pd.DataFrame(index=Y.index)
-            for index, element  in enumerate(self.originallabelorder):
-                Y_rearranged = Y_rearranged.join(Y[element])
-            Y=Y_rearranged
 
         return Y
 
@@ -107,17 +78,11 @@ class RectifiedClassiferChain:
             predprob=classifer.predict_proba(X)
             predprobValue=(predprob[:,1]-predprob[:,0])
             #print(predprobValue)
-            YPredict = pd.DataFrame(prediction, columns=[self.updatedlabelorder[i]])
-            Ypredprob=pd.DataFrame(predprobValue, columns=[self.updatedlabelorder[i]])
+            YPredict = pd.DataFrame(prediction, columns=[self.originallabelorder[i]])
+            Ypredprob=pd.DataFrame(predprobValue, columns=[self.originallabelorder[i]])
             X = X.join(YPredict)
             Y = Y.join(Ypredprob)
             i = i + 1
-
-        if (self.optimized == True):
-            Y_rearranged = pd.DataFrame(index=Y.index)
-            for index, element  in enumerate(self.originallabelorder):
-                Y_rearranged = Y_rearranged.join(Y[element])
-            Y=Y_rearranged
 
         return Y
 
@@ -130,6 +95,7 @@ class RectifiedClassiferChain:
         scorelist=[]
         i = 0
         for value in ((y_true.values)):
+            #print(i)
             match = 0.0
             total = 0.0
             predictedlabel = y_pred.iloc[i]
@@ -180,49 +146,7 @@ class RectifiedClassiferChain:
         '''
         return self.ModifiedHammingAccuracyscore(y_predict,y_true),self.ModifiedF1score(y_predict,y_true)
 
-    def getOptimizedLabelOrder(self):
-        '''
-        :param y_true:
-        :param y_predict:
-        :return:
-        '''
-        return self.updatedlabelorder
 
-    def OptimizeLabelOrder(self, Y):
-        '''
-        :param Y:
-        :return:
-        '''
-        Valuelist = []
-        Yoptimized = pd.DataFrame(index=Y.index)
-
-        for i in range(len(self.originallabelorder)):
-            TotalValue = 0.0
-            count=0.0
-            if self.optimizedmethod == 'MissingRatio':
-                ratio=getMissingratio(Y[self.originallabelorder[i]])
-                Valuelist.append(ratio)
-            else:
-                for j in range(len(self.originallabelorder)):
-                    if (i == j):
-                        continue
-                    Ydropped = Y.dropna(subset=[self.originallabelorder[i], self.originallabelorder[j]])
-                    Ydropped = Ydropped.reset_index()
-                    if(len(Ydropped) >= 50):
-                        if self.optimizedmethod== 'CrossEntropy':
-                            value = cEntropy(Ydropped[self.originallabelorder[i]], Ydropped[self.originallabelorder[j]])
-                        else:
-                            value=getConditionalProbability(Ydropped[self.originallabelorder[i]], Ydropped[self.originallabelorder[j]])
-
-                        TotalValue = TotalValue + value
-                        count=count+1
-                Valuelist.append(TotalValue/(count+delta))
-        Indexlist = np.argsort(Valuelist)
-        for index in Indexlist:
-            Yoptimized = Yoptimized.join(Y[self.originallabelorder[index]])
-            self.updatedlabelorder.append(self.originallabelorder[index])
-            #print(Yoptimized)
-        return Yoptimized
 
     def getFeature(self, NoOfFeature=10, type=0, full=False):
         sim_all_df = pd.DataFrame()
@@ -231,7 +155,7 @@ class RectifiedClassiferChain:
         for classifer in self.ClassifierList:
 
             if(count >0):
-                Data=Data.join(self.Y[self.updatedlabelorder[count-1]])
+                Data=Data.join(self.Y[self.originallabelorder[count-1]])
             if (type == 0):
                 sim_t_df = pd.DataFrame([classifer.coef_[0]], columns=Data.columns)
             else:  ###RF
@@ -248,12 +172,50 @@ class RectifiedClassiferChain:
             sim_all_df_T["feature_weight_sum"] = sim_all_df_T.apply(lambda x: abs(x).sum(), axis=1)
             sim_all_df_T_top = sim_all_df_T.sort_values("feature_weight_sum", ascending=False)[:NoOfFeature]
             return sim_all_df_T_top
+    
+    
+    def AddExisitingLabels(self,Labels):
+        print('Labeladd')
+        for lab in Labels:
+            hashvalue=hash(tuple(lab))
+            if hashvalue in self.LabelHashDic:
+                self.LabelCount[hashvalue]=self.LabelCount[hashvalue]+1
+            else:
+                self.LabelHashDic[hashvalue]=lab
+                self.LabelCount[hashvalue]=1
+    
+    def LabelSubsetCorrection(self, Labelset,columnsname):
+        NewLabelset=pd.DataFrame(columns=columnsname)
+        Closetset=[]
+        for lab in Labelset:
+            if hash(tuple(lab)) in self.LabelHashDic:
+                Closetset=lab
+                #print('Exisiitng. Ok')
+            else:
+                print('Not found' +str(lab))
+                Distance=max(len(lab)*2,1000)
+                count=0
+                for key in self.LabelHashDic:
+                    HammingDistance=sum(c1 != c2 for c1, c2 in zip(self.LabelHashDic[key],lab))
+                    if (HammingDistance < Distance):
+                        Distance = HammingDistance
+                        Closetset=self.LabelHashDic[key]
+                        count=self.LabelCount[key]
+                        print('Found' + str(HammingDistance) +str(Closetset))
+                    elif (HammingDistance == Distance and count < self.LabelCount[key]):
+                        Distance = HammingDistance
+                        Closetset=self.LabelHashDic[key]
+                        count=self.LabelCount[key]
+                        print('Found Another' +str(Closetset))
 
-    def getShapFeatures(self):
-        if (self.type==3):
-            return TotalSumvalue
-        else:
-            return 'Not Implemented'
+            labelseries=pd.Series(Closetset,columnsname)
+            NewLabelset=NewLabelset.append(labelseries,ignore_index=True)
+        
+        return NewLabelset
+
+
+
+
 
 '''
 import pandas as pd
@@ -263,24 +225,44 @@ from sklearn.model_selection import RepeatedKFold
 
 df = pd.read_csv('Finalplfam_iddataset_Phenotype.csv',index_col=0)
 Y=df[['ciprofloxacin','ampicillin','amoxicillin','gentamicin']]
-droppeddf=df.drop(columns=['genome_id', 'genome_name','phenotype','ciprofloxacin','ampicillin','amoxicillin','gentamicin'])
+droppeddf=df.drop(['genome_id', 'genome_name','phenotype','ciprofloxacin','ampicillin','amoxicillin','gentamicin'],axis=1)
 X=droppeddf
+columnnanme=['ciprofloxacin','ampicillin','amoxicillin','gentamicin']
+X=X.fillna(0)
+print("Before removing low variance: ", X.shape)
+from sklearn.feature_selection import VarianceThreshold
+selector = VarianceThreshold(threshold=0.1)
+selector.fit_transform(X)
+X = X[X.columns[selector.get_support()]].copy()
+print("After removing low variance: ", X.shape)
+
 model= SVC(class_weight='balanced',C=0.01,kernel='linear',gamma=1e-06,probability=True)
 kfold = RepeatedKFold(n_splits=5,n_repeats=1, random_state=328228)
-X=X.fillna(0)
+
 scorelist=[]
+subsetresult=[]
 for train_index, test_index in kfold.split(X, Y):
     x_train_tfidf = X.iloc[train_index]
     y_train_tfidf = Y.iloc[train_index]
     x_test_tfidf = X.iloc[test_index]
     y_test_tfidf = Y.iloc[test_index]
-    rcc=RectifiedClassiferChain(model)
-    classifierlist=rcc.trainRCC(X,Y)
+
+    scc=StackedClassiferChain(model)
+
+    
+    classifierlist=scc.trainSCC(X,Y)
     x_test_tfidf=x_test_tfidf.reset_index(drop=True)
     y_test_tfidf=y_test_tfidf.reset_index(drop=True)
-    prediction=rcc.predictRCC(x_test_tfidf)
+    prediction=scc.predictSCC(x_test_tfidf)
     print (prediction)
-    score=rcc.Evalute(y_test_tfidf,prediction)
+    score=scc.Evaluate(y_test_tfidf,prediction) 
     scorelist.append(score)
+    scc.AddExisitingLabels(y_train_tfidf.fillna(0).values)
+    subsetcorrectpredict=scc.LabelSubsetCorrection(prediction.values,columnnanme)
+    #print(subsetcorrectpredict)
+    scoressc=scc.Evaluate(y_test_tfidf,subsetcorrectpredict) 
+    subsetresult.append(scoressc)
 print (np.mean(scorelist))
+print(np.mean(subsetresult))
+
 '''
