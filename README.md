@@ -6,6 +6,7 @@ RectifiedClassifierChain.py is the proposed model implementation
 StackedClassifierChain.py is Stacked labels with subset correction for Classifierchain implementation
 
 Prerequists
+
 Numpy, Pandas, Shap, sklearn, XGBoost, skmultilearn, matplotlib, Seaborn, tqdm
 
 Steps
