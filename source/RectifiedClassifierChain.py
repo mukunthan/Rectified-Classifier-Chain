@@ -4,11 +4,12 @@ from sklearn.base import clone
 import numpy as np
 import pandas as pd
 from Utilils import *
+import shap
 
 delta=0.000000000000000000001
 
 class RectifiedClassiferChain:
-    def __init__(self,basemodel,optimized=False, optimizedmethod='CrossEntropy'):
+    def __init__(self,basemodel,type=0, optimized=False, optimizedmethod='CrossEntropy'):
         '''
         :param basemodel: Basemodel to be used in ClassiferChain
         '''
@@ -20,6 +21,7 @@ class RectifiedClassiferChain:
         self.optimizedmethod=optimizedmethod
         self.X=None
         self.Y=None
+        self.type = type
 
     def trainRCC(self,X,Y):
         '''
@@ -49,6 +51,7 @@ class RectifiedClassiferChain:
             droppedindex = Y[~Y.index.isin(Ytrain.index)].index.values
             Xtrain = Xtrain.drop(droppedindex, axis=0)
             Ytrain = Ytrain[category]
+            Ytrain = Ytrain.astype(int)
             modelc.fit(Xtrain, Ytrain.values.ravel())
             if (len(droppedindex) > 0):
                 prediction = modelc.predict(X.iloc[droppedindex])
@@ -67,7 +70,17 @@ class RectifiedClassiferChain:
         '''
         i = 0
         Y = pd.DataFrame(index=X.index)
+        global TotalSumvalue
+        TotalSumvalue = [[0 for x in range(X.shape[0])] for y in range(X.shape[1])]
         for classifer in self.ClassifierList:
+            if (self.type==3):
+                KErnalExplnanier = shap.TreeExplainer(classifer)
+                class_shap_values = KErnalExplnanier.shap_values(X)
+                if (i == 0):
+                    TotalSumvalue = np.absolute(class_shap_values)
+                else:
+                    TotalSumvalue = TotalSumvalue + np.absolute(class_shap_values[:, :-i])
+
             prediction = classifer.predict(X)
             YPredict = pd.DataFrame(prediction, columns=[self.updatedlabelorder[i]])
             X = X.join(YPredict)
@@ -235,6 +248,13 @@ class RectifiedClassiferChain:
             sim_all_df_T["feature_weight_sum"] = sim_all_df_T.apply(lambda x: abs(x).sum(), axis=1)
             sim_all_df_T_top = sim_all_df_T.sort_values("feature_weight_sum", ascending=False)[:NoOfFeature]
             return sim_all_df_T_top
+
+    def getShapFeatures(self):
+        if (self.type==3):
+            return TotalSumvalue
+        else:
+            return 'Not Implemented'
+
 '''
 import pandas as pd
 from skmultilearn.problem_transform import ClassifierChain
