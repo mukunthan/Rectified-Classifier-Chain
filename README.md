@@ -19,3 +19,9 @@ Steps
 8. Copy the Top featues saved in generated feature files in Step 5 and Run PrepareOutput.py to check the definition of features and known genes
 
 
+Please cite the below paper if you use this code in your work:
+
+M. Tharmakulasingam, B. Gardner, R. La Ragione and A. Fernando, "Rectified Classifier Chains for Prediction of Antibiotic Resistance from Multi-labelled Data with Missing Labels," in IEEE/ACM Transactions on Computational Biology and Bioinformatics, doi: 10.1109/TCBB.2022.3148577.
+
+
+
